@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # KAIROS: Kernel-Aware Intelligent Resource Orchestration System
 
 ## 1. System Overview
@@ -141,3 +142,6 @@ kairos/
 
 ### One-Click Launch (Windows)
 Double-click `start.bat` in the root project folder to launch both backend and frontend servers simultaneously.
+=======
+# KairOS
+>>>>>>> 682f4ed17d760517844e39afbd755c7559df990a
