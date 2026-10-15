@@ -12,28 +12,43 @@ import {
 } from 'recharts';
 import { Activity, Cpu, ArrowUpDown } from 'lucide-react';
 
-export default function TelemetryCharts({ historyData, currentTelemetry }) {
+export default function TelemetryCharts({ historyData, currentTelemetry, theme = 'dark' }) {
   const cores = currentTelemetry?.cpu?.cores || [];
 
+  const gridColor = '#132035';
+  const axisColor = '#4a6a8a';
+  const tooltipContentStyle = {
+    backgroundColor: '#070f1e',
+    borderColor: '#1d3352',
+    borderRadius: '8px',
+    fontSize: '11px',
+    fontFamily: 'JetBrains Mono, monospace',
+    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.8)',
+    color: '#e2eaf5'
+  };
+  const tooltipItemStyle = { color: '#e2eaf5' };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-mono">
       {/* Top Row: Dual Real-time Telemetry Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* CPU & Memory Utilization Timeline */}
-        <div className="p-5 rounded-xl panel-border bg-white">
+        <div className="p-5 rounded-xl panel-border bg-[#0b1120] relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <Activity className="w-4 h-4 text-orange-600" />
-              <h3 className="text-sm font-bold text-slate-800">CPU & Memory Real-Time Load</h3>
+              <Activity className="w-4 h-4 text-[#00d4ff]" />
+              <h3 className="text-xs font-bold text-[#e2eaf5] uppercase tracking-wider">
+                CPU & Memory Real-Time Load
+              </h3>
             </div>
-            <div className="flex items-center space-x-3 text-xs font-mono">
-              <span className="flex items-center space-x-1.5 text-orange-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span>
+            <div className="flex items-center space-x-3 text-[11px] font-mono">
+              <span className="flex items-center space-x-1.5 text-[#00d4ff] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-[#00d4ff] shadow-[0_0_6px_#00d4ff]"></span>
                 <span>CPU ({currentTelemetry?.cpu?.percent || 0}%)</span>
               </span>
-              <span className="flex items-center space-x-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-500 inline-block"></span>
+              <span className="flex items-center space-x-1.5 text-[#00ff88] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-[#00ff88] shadow-[0_0_6px_#00ff88]"></span>
                 <span>RAM ({currentTelemetry?.memory?.percent || 0}%)</span>
               </span>
             </div>
@@ -44,33 +59,27 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
               <AreaChart data={historyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ea580c" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#ea580c" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#00d4ff" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="memGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#64748b" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#64748b" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#00ff88" stopOpacity={0.30} />
+                    <stop offset="95%" stopColor="#00ff88" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="time" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 100]} stroke="#94a3b8" tick={{ fontSize: 10 }} unit="%" />
+                <CartesianGrid strokeDasharray="2 2" stroke={gridColor} />
+                <XAxis dataKey="time" stroke={axisColor} tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 100]} stroke={axisColor} tick={{ fontSize: 10 }} unit="%" />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    borderColor: '#e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                  itemStyle={{ color: '#0f172a' }}
+                  contentStyle={tooltipContentStyle}
+                  itemStyle={tooltipItemStyle}
                 />
                 <Area
                   type="monotone"
                   dataKey="cpu"
                   name="CPU %"
-                  stroke="#ea580c"
-                  strokeWidth={2.5}
+                  stroke="#00d4ff"
+                  strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#cpuGrad)"
                   isAnimationActive={false}
@@ -79,7 +88,7 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
                   type="monotone"
                   dataKey="memory"
                   name="RAM %"
-                  stroke="#64748b"
+                  stroke="#00ff88"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#memGrad)"
@@ -91,19 +100,21 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
         </div>
 
         {/* Disk I/O & Network Throughput Timeline */}
-        <div className="p-5 rounded-xl panel-border bg-white">
+        <div className="p-5 rounded-xl panel-border bg-[#0b1120] relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <ArrowUpDown className="w-4 h-4 text-orange-600" />
-              <h3 className="text-sm font-bold text-slate-800">I/O Throughput (Disk & Network)</h3>
+              <ArrowUpDown className="w-4 h-4 text-[#c084fc]" />
+              <h3 className="text-xs font-bold text-[#e2eaf5] uppercase tracking-wider">
+                I/O Throughput (Disk & Network)
+              </h3>
             </div>
-            <div className="flex items-center space-x-3 text-xs font-mono">
-              <span className="flex items-center space-x-1.5 text-orange-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span>
+            <div className="flex items-center space-x-3 text-[11px] font-mono">
+              <span className="flex items-center space-x-1.5 text-[#c084fc] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-[#c084fc] shadow-[0_0_6px_#c084fc]"></span>
                 <span>Disk I/O</span>
               </span>
-              <span className="flex items-center space-x-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span>
+              <span className="flex items-center space-x-1.5 text-[#ffaa00] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]"></span>
                 <span>Network</span>
               </span>
             </div>
@@ -112,24 +123,18 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={historyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="time" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} unit=" KB/s" />
+                <CartesianGrid strokeDasharray="2 2" stroke={gridColor} />
+                <XAxis dataKey="time" stroke={axisColor} tick={{ fontSize: 10 }} />
+                <YAxis stroke={axisColor} tick={{ fontSize: 10 }} unit=" KB/s" />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    borderColor: '#e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                  itemStyle={{ color: '#0f172a' }}
+                  contentStyle={tooltipContentStyle}
+                  itemStyle={tooltipItemStyle}
                 />
                 <Line
                   type="monotone"
                   dataKey="diskIO"
                   name="Disk I/O"
-                  stroke="#ea580c"
+                  stroke="#c084fc"
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -138,7 +143,7 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
                   type="monotone"
                   dataKey="netIO"
                   name="Network"
-                  stroke="#94a3b8"
+                  stroke="#ffaa00"
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -151,13 +156,15 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
       </div>
 
       {/* Per-Core Multi-Processor Matrix */}
-      <div className="p-5 rounded-xl panel-border bg-white">
+      <div className="p-5 rounded-xl panel-border bg-[#0b1120]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <Cpu className="w-4 h-4 text-orange-500" />
-            <h3 className="text-sm font-bold text-slate-800">Logical Core Multi-Processor Distribution</h3>
+            <Cpu className="w-4 h-4 text-[#00d4ff]" />
+            <h3 className="text-xs font-bold text-[#e2eaf5] uppercase tracking-wider">
+              Logical Core Multi-Processor Distribution
+            </h3>
           </div>
-          <span className="text-xs text-slate-500 font-mono font-medium">
+          <span className="text-[11px] text-[#4a6a8a] font-mono">
             {cores.length} Processor Units Detected
           </span>
         </div>
@@ -166,20 +173,23 @@ export default function TelemetryCharts({ historyData, currentTelemetry }) {
           {cores.map((load, idx) => {
             const isHigh = load > 80;
             const isMid = load > 50;
+            const coreColor = isHigh ? '#ff4466' : isMid ? '#ffaa00' : '#00d4ff';
             return (
-              <div key={idx} className="bg-slate-50/80 p-3 rounded-lg border border-slate-200">
-                <div className="flex justify-between items-center mb-1 text-xs font-mono">
-                  <span className="text-slate-500 font-medium">Core {idx}</span>
-                  <span className={`font-bold ${isHigh ? 'text-rose-600' : isMid ? 'text-amber-600' : 'text-orange-600'}`}>
+              <div key={idx} className="bg-[#070e1c] p-3 rounded-lg border border-[#132035] hover:border-[#00d4ff]/40 transition">
+                <div className="flex justify-between items-center mb-1 text-[11px] font-mono">
+                  <span className="text-[#4a6a8a] font-medium">Core {idx}</span>
+                  <span className="font-bold" style={{ color: coreColor }}>
                     {load}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#0d1e33] h-1.5 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      isHigh ? 'bg-rose-500' : isMid ? 'bg-amber-500' : 'bg-orange-500'
-                    }`}
-                    style={{ width: `${Math.min(load, 100)}%` }}
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.min(load, 100)}%`,
+                      backgroundColor: coreColor,
+                      boxShadow: `0 0 6px ${coreColor}80`
+                    }}
                   />
                 </div>
               </div>
