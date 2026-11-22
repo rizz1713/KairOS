@@ -30,6 +30,7 @@ from app.banker_sim import (
 from app.ml_advisor import (
     advisor_instance, get_live_recommendation, get_live_system_workload
 )
+from app.voice_assistant import build_response as va_build_response
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("kairos")
@@ -365,6 +366,25 @@ def get_recommendations_history(limit: int = Query(20, ge=5, le=100), db: Sessio
         }
         for r in records
     ]
+
+# ----------------- Voice Assistant Endpoint -----------------
+
+class VoiceAssistantRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000, description="User's text or voice-transcribed query")
+
+@app.post("/api/voice-assistant/chat")
+def voice_assistant_chat(req: VoiceAssistantRequest):
+    """
+    Voice-assistant chatbot endpoint.
+    Accepts natural-language queries, scans processes for threats,
+    and returns security-aware responses.
+    """
+    try:
+        result = va_build_response(req.message)
+        return result
+    except Exception as e:
+        logger.error(f"Voice assistant error: {e}")
+        raise HTTPException(status_code=500, detail=f"Voice assistant error: {str(e)}")
 
 # ----------------- WebSocket Route -----------------
 

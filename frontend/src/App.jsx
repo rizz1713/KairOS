@@ -7,6 +7,7 @@ import SchedulerSimulator from './components/SchedulerSimulator';
 import BankerSimulator from './components/BankerSimulator';
 import MLAdvisor from './components/MLAdvisor';
 import HistoryLog from './components/HistoryLog';
+import VoiceAssistant from './components/VoiceAssistant';
 import { api } from './services/api';
 import { Menu, Clock, Activity, Cpu, ListTree, ShieldAlert, BrainCircuit, History, Search, Power, Shield } from 'lucide-react';
 
@@ -85,7 +86,7 @@ export default function App() {
     scheduler: { title: 'CPU Scheduling Simulator',             icon: Cpu        },
     banker:    { title: 'Deadlock & Banker Algorithm',          icon: ShieldAlert},
     advisor:   { title: 'ML Kernel Scheduling Advisor',         icon: BrainCircuit},
-    history:   { title: 'System Architecture & DB',             icon: History    }
+    history:   { title: 'System Architecture & DB',             icon: History    },
   };
 
   const currentModule = tabTitles[activeTab] || tabTitles.telemetry;
@@ -173,6 +174,9 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {/* ── Floating Security Guard Widget (always visible) ── */}
+        <VoiceAssistant />
 
         {/* Page Content */}
         <main className="flex-1 w-full px-4 sm:px-6 py-5 space-y-5">

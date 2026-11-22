@@ -71,6 +71,7 @@
 .badge-sim  { background: rgba(0,212,255,0.10); color: #00d4ff; border: 1px solid rgba(0,212,255,0.25); }
 .badge-ai   { background: rgba(170,90,255,0.12); color: #c084fc; border: 1px solid rgba(170,90,255,0.3); }
 .badge-sql  { background: rgba(255,170,0,0.10);  color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+.badge-sec  { background: rgba(255,68,102,0.12); color: #ff4466; border: 1px solid rgba(255,68,102,0.35); }
 
 /* ── Custom Scrollbar class ─────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }

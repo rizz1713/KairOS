@@ -9,12 +9,12 @@ export default function Sidebar({
   telemetry, collapsed, setCollapsed, mobileOpen, setMobileOpen
 }) {
   const tabs = [
-    { id: 'telemetry', label: 'Live Telemetry', icon: Activity, badge: 'LIVE' },
-    { id: 'processes', label: 'OS Algorithms', icon: ListTree, badge: telemetry?.process_count ? `${telemetry.process_count}` : null },
-    { id: 'scheduler', label: 'CPU Scheduler', icon: Cpu, badge: 'SIM' },
-    { id: 'banker', label: 'Deadlock Matrix', icon: ShieldAlert, badge: 'SIM' },
-    { id: 'advisor', label: 'ML Advisor', icon: BrainCircuit, badge: 'AI' },
-    { id: 'history', label: 'Architecture & DB', icon: History, badge: 'SQL' },
+    { id: 'telemetry', label: 'Live Telemetry',   icon: Activity,    badge: 'LIVE' },
+    { id: 'processes', label: 'OS Algorithms',     icon: ListTree,    badge: telemetry?.process_count ? `${telemetry.process_count}` : null },
+    { id: 'scheduler', label: 'CPU Scheduler',     icon: Cpu,         badge: 'SIM' },
+    { id: 'banker',    label: 'Deadlock Matrix',   icon: ShieldAlert, badge: 'SIM' },
+    { id: 'advisor',   label: 'ML Advisor',        icon: BrainCircuit,badge: 'AI'  },
+    { id: 'history',   label: 'Architecture & DB', icon: History,     badge: 'SQL' },
   ];
 
   const badgeClass = { LIVE: 'badge-live', SIM: 'badge-sim', AI: 'badge-ai', SQL: 'badge-sql' };
