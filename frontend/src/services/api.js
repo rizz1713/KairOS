@@ -118,5 +118,45 @@ export const api = {
     const res = await fetch(`${API_BASE}/history/recommendations?limit=${limit}`);
     if (!res.ok) throw new Error('Failed to load recommendation history');
     return res.json();
+  },
+
+  async getMemoryPresets() {
+    const res = await fetch(`${API_BASE}/simulation/memory/presets`);
+    if (!res.ok) throw new Error('Failed to fetch memory presets');
+    return res.json();
+  },
+
+  async simulateMemoryAllocation(total_memory, blocks, algorithm) {
+    const res = await fetch(`${API_BASE}/simulation/memory/allocate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ total_memory, blocks, algorithm })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Memory allocation simulation failed');
+    return data;
+  },
+
+  async getPageReplacementPresets() {
+    const res = await fetch(`${API_BASE}/simulation/page-replacement/presets`);
+    if (!res.ok) throw new Error('Failed to fetch page replacement presets');
+    return res.json();
+  },
+
+  async simulatePageReplacement(frames, reference_string, algorithm) {
+    const res = await fetch(`${API_BASE}/simulation/page-replacement`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ frames, reference_string, algorithm })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Page replacement simulation failed');
+    return data;
+  },
+
+  async getProcessBurstHistory() {
+    const res = await fetch(`${API_BASE}/processes/burst-history`);
+    if (!res.ok) throw new Error('Failed to fetch burst history');
+    return res.json();
   }
 };

@@ -1,170 +1,101 @@
 import React from 'react';
-import { Cpu, HardDrive, Database, ArrowUpRight, ArrowDownRight, Layers, Zap } from 'lucide-react';
+import { Cpu, Database, HardDrive, Layers, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+
+function SkeletonCard() {
+  return (
+    <div className="card animate-pulse">
+      <div className="p-5 space-y-3">
+        <div className="h-3 w-24 bg-slate-100 rounded" />
+        <div className="h-8 w-20 bg-slate-100 rounded" />
+        <div className="h-1.5 w-full bg-slate-100 rounded-full" />
+        <div className="h-3 w-32 bg-slate-100 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ accentClass, icon: Icon, iconColor, label, badge, value, unit, subLeft, subRight, barPct, barColor }) {
+  return (
+    <div className={`card card-hover ${accentClass} overflow-hidden`}>
+      <div className="p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon className={`w-4 h-4 ${iconColor}`} />
+            <span className="stat-label">{label}</span>
+          </div>
+          <span className="badge badge-cyan">{badge}</span>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="stat-value">{value}</span>
+          {unit && <span className="text-sm text-slate-400 mono font-semibold">{unit}</span>}
+        </div>
+        <div className="progress-track">
+          <div className={`progress-fill ${barColor}`} style={{ width: `${Math.min(barPct, 100)}%` }} />
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] text-slate-500 mono">{subLeft}</span>
+          <span className="text-[11px] text-slate-500 mono">{subRight}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MetricCards({ telemetry }) {
   if (!telemetry) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-32 bg-slate-100 rounded-xl border border-slate-200"></div>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
       </div>
     );
   }
 
   const { cpu, memory, disk, network, process_count } = telemetry;
+  const cpuBar = cpu.percent > 85 ? 'bg-rose-500' : cpu.percent > 65 ? 'bg-amber-500' : 'bg-cyan-500';
+  const memBar = memory.percent > 85 ? 'bg-rose-500' : memory.percent > 70 ? 'bg-amber-500' : 'bg-blue-500';
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* CPU Card */}
-      <div className="p-5 rounded-xl panel-border panel-hover relative overflow-hidden bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-slate-500 tracking-wider uppercase flex items-center gap-1.5">
-            <Cpu className="w-4 h-4 text-orange-500" />
-            CPU Utilization
-          </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold bg-orange-50 text-orange-700 border border-orange-200/80">
-            {cpu.frequency?.current ? `${cpu.frequency.current} MHz` : 'ACTIVE'}
-          </span>
-        </div>
-
-        <div className="flex items-baseline justify-between mb-2">
-          <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900">
-            {cpu.percent}%
-          </div>
-          <div className="text-xs text-slate-500 font-mono text-right font-medium">
-            <span>{cpu.physical_cores} P / {cpu.logical_cores} L Cores</span>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mb-3">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              cpu.percent > 85 ? 'bg-rose-500' : cpu.percent > 65 ? 'bg-amber-500' : 'bg-orange-500'
-            }`}
-            style={{ width: `${Math.min(cpu.percent, 100)}%` }}
-          />
-        </div>
-
-        <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono">
-          <span>Switches: {cpu.ctx_switches ? (cpu.ctx_switches / 1000).toFixed(0) + 'k' : 'N/A'}</span>
-          <span>IRQs: {cpu.interrupts ? (cpu.interrupts / 1000).toFixed(0) + 'k' : 'N/A'}</span>
-        </div>
-      </div>
-
-      {/* Memory Card */}
-      <div className="p-5 rounded-xl panel-border panel-hover relative overflow-hidden bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-slate-500 tracking-wider uppercase flex items-center gap-1.5">
-            <Database className="w-4 h-4 text-orange-500" />
-            Physical Memory
-          </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold bg-orange-50 text-orange-700 border border-orange-200/80">
-            {memory.used_gb} / {memory.total_gb} GB
-          </span>
-        </div>
-
-        <div className="flex items-baseline justify-between mb-2">
-          <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900">
-            {memory.percent}%
-          </div>
-          <div className="text-xs text-slate-500 font-mono text-right font-medium">
-            <span>Avail: {memory.available_gb} GB</span>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mb-3">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              memory.percent > 85 ? 'bg-rose-500' : memory.percent > 70 ? 'bg-amber-500' : 'bg-orange-500'
-            }`}
-            style={{ width: `${Math.min(memory.percent, 100)}%` }}
-          />
-        </div>
-
-        <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono">
-          <span>Swap: {memory.swap_percent}%</span>
-          <span>Used: {memory.swap_used_gb} GB</span>
-        </div>
-      </div>
-
-      {/* Disk Storage Card */}
-      <div className="p-5 rounded-xl panel-border panel-hover relative overflow-hidden bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-slate-500 tracking-wider uppercase flex items-center gap-1.5">
-            <HardDrive className="w-4 h-4 text-orange-500" />
-            Disk & Storage
-          </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold bg-orange-50 text-orange-700 border border-orange-200/80">
-            {disk.free_gb} GB Free
-          </span>
-        </div>
-
-        <div className="flex items-baseline justify-between mb-2">
-          <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900">
-            {disk.percent}%
-          </div>
-          <div className="text-xs text-slate-500 font-mono text-right font-medium">
-            <span>Total: {disk.total_gb} GB</span>
-          </div>
-        </div>
-
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mb-3">
-          <div
-            className="h-full rounded-full bg-orange-500 transition-all duration-500"
-            style={{ width: `${Math.min(disk.percent, 100)}%` }}
-          />
-        </div>
-
-        <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono">
-          <span className="flex items-center gap-0.5 text-slate-700 font-medium">
-            <ArrowDownRight className="w-3.5 h-3.5 text-orange-600" /> R: {disk.read_kb_s} KB/s
-          </span>
-          <span className="flex items-center gap-0.5 text-slate-700 font-medium">
-            <ArrowUpRight className="w-3.5 h-3.5 text-orange-600" /> W: {disk.write_kb_s} KB/s
-          </span>
-        </div>
-      </div>
-
-      {/* Network & Processes Card */}
-      <div className="p-5 rounded-xl panel-border panel-hover relative overflow-hidden bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-slate-500 tracking-wider uppercase flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-orange-500" />
-            Workload & Tasks
-          </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold bg-orange-50 text-orange-700 border border-orange-200/80">
-            {process_count} PROCS
-          </span>
-        </div>
-
-        <div className="flex items-baseline justify-between mb-2">
-          <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900">
-            {process_count}
-          </div>
-          <div className="text-xs text-slate-500 font-mono text-right font-medium">
-            <span>Active Tasks</span>
-          </div>
-        </div>
-
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mb-3">
-          <div
-            className="h-full rounded-full bg-orange-500 transition-all duration-500"
-            style={{ width: `${Math.min((process_count / 300) * 100, 100)}%` }}
-          />
-        </div>
-
-        <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono">
-          <span className="flex items-center gap-0.5 text-slate-700 font-medium">
-            <ArrowDownRight className="w-3.5 h-3.5 text-orange-600" /> In: {network?.recv_kb_s || 0} KB/s
-          </span>
-          <span className="flex items-center gap-0.5 text-slate-700 font-medium">
-            <ArrowUpRight className="w-3.5 h-3.5 text-orange-600" /> Out: {network?.sent_kb_s || 0} KB/s
-          </span>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <MetricCard
+        accentClass="card-accent-top"
+        icon={Cpu} iconColor="text-cyan-500"
+        label="CPU Utilization"
+        badge={cpu.frequency?.current ? `${cpu.frequency.current} MHz` : 'ACTIVE'}
+        value={`${cpu.percent}`} unit="%"
+        barPct={cpu.percent} barColor={cpuBar}
+        subLeft={`${cpu.physical_cores}P / ${cpu.logical_cores}L Cores`}
+        subRight={`IRQs ${cpu.interrupts ? (cpu.interrupts/1000).toFixed(0)+'k' : 'N/A'}`}
+      />
+      <MetricCard
+        accentClass="card-accent-blue"
+        icon={Database} iconColor="text-blue-500"
+        label="Physical Memory"
+        badge={`${memory.used_gb} / ${memory.total_gb} GB`}
+        value={`${memory.percent}`} unit="%"
+        barPct={memory.percent} barColor={memBar}
+        subLeft={`Avail: ${memory.available_gb} GB`}
+        subRight={`Swap: ${memory.swap_percent}%`}
+      />
+      <MetricCard
+        accentClass="card-accent-amber"
+        icon={HardDrive} iconColor="text-amber-500"
+        label="Disk & Storage"
+        badge={`${disk.free_gb} GB Free`}
+        value={`${disk.percent}`} unit="%"
+        barPct={disk.percent} barColor="bg-amber-500"
+        subLeft={<span className="flex items-center gap-0.5"><ArrowDownRight className="w-3 h-3 text-amber-500 inline" /> R: {disk.read_kb_s} KB/s</span>}
+        subRight={<span className="flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3 text-amber-500 inline" /> W: {disk.write_kb_s} KB/s</span>}
+      />
+      <MetricCard
+        accentClass="card-accent-emerald"
+        icon={Layers} iconColor="text-emerald-500"
+        label="Workload & Tasks"
+        badge={`${process_count} PROCS`}
+        value={process_count} unit=""
+        barPct={Math.min((process_count/300)*100, 100)} barColor="bg-emerald-500"
+        subLeft={<span className="flex items-center gap-0.5"><ArrowDownRight className="w-3 h-3 text-emerald-500 inline" /> In: {network?.recv_kb_s||0} KB/s</span>}
+        subRight={<span className="flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3 text-emerald-500 inline" /> Out: {network?.sent_kb_s||0} KB/s</span>}
+      />
     </div>
   );
 }

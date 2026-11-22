@@ -276,6 +276,229 @@ def run_banker_resource_request(req: BankerAllocationRequest):
         request_vector=req.request_vector
     )
 
+# ----------------- Memory Allocation Algorithms -----------------
+
+class MemoryBlock(BaseModel):
+    id: int
+    size: int
+
+class MemoryAllocRequest(BaseModel):
+    total_memory: int = Field(1024, ge=64, le=8192)
+    blocks: List[MemoryBlock]
+    algorithm: str = Field("ALL", description="FIRST_FIT, BEST_FIT, WORST_FIT, ALL")
+
+def _run_memory_allocation(total_memory: int, blocks: list, algorithm: str):
+    """
+    Simulate memory allocation. blocks = [{id, size}].
+    Returns partition map and allocation results.
+    """
+    # Fixed partition sizes derived from block sizes (simulate OS partitions)
+    # We create free partitions of varying sizes
+    import random
+    random.seed(42)
+
+    # Build free partition list from total_memory
+    # Spread across realistic partition sizes
+    base_sizes = [64, 128, 256, 128, 64, 192, 96, 160, 80, 112]
+    partitions = []
+    total = 0
+    pid = 1
+    for s in base_sizes:
+        if total + s > total_memory:
+            break
+        partitions.append({"id": pid, "size": s, "start": total, "end": total + s})
+        total += s
+        pid += 1
+
+    def allocate(parts, blks, strategy):
+        # Deep copy
+        free = [dict(p) for p in parts]
+        allocations = []
+        fragmentation = 0
+        for blk in blks:
+            candidates = [(i, p) for i, p in enumerate(free) if not p.get("allocated") and p["size"] >= blk["size"]]
+            if not candidates:
+                allocations.append({"block_id": blk["id"], "block_size": blk["size"], "partition": None, "status": "NOT_ALLOCATED", "wasted": 0})
+                continue
+            if strategy == "FIRST_FIT":
+                chosen_i, chosen_p = candidates[0]
+            elif strategy == "BEST_FIT":
+                chosen_i, chosen_p = min(candidates, key=lambda x: x[1]["size"] - blk["size"])
+            elif strategy == "WORST_FIT":
+                chosen_i, chosen_p = max(candidates, key=lambda x: x[1]["size"] - blk["size"])
+            else:
+                chosen_i, chosen_p = candidates[0]
+
+            wasted = chosen_p["size"] - blk["size"]
+            fragmentation += wasted
+            free[chosen_i]["allocated"] = True
+            free[chosen_i]["block_id"] = blk["id"]
+            free[chosen_i]["wasted"] = wasted
+            allocations.append({
+                "block_id": blk["id"],
+                "block_size": blk["size"],
+                "partition_id": chosen_p["id"],
+                "partition_size": chosen_p["size"],
+                "start": chosen_p["start"],
+                "end": chosen_p["end"],
+                "wasted": wasted,
+                "status": "ALLOCATED"
+            })
+        allocated_count = sum(1 for a in allocations if a["status"] == "ALLOCATED")
+        efficiency = round((sum(a["block_size"] for a in allocations if a["status"] == "ALLOCATED") / total_memory) * 100, 1)
+        return {
+            "algorithm": strategy,
+            "partitions": free,
+            "allocations": allocations,
+            "allocated_count": allocated_count,
+            "total_blocks": len(blks),
+            "total_fragmentation_kb": fragmentation,
+            "memory_efficiency": efficiency
+        }
+
+    blks = [b.dict() if hasattr(b, 'dict') else b for b in blocks]
+
+    if algorithm == "ALL":
+        results = {}
+        for s in ["FIRST_FIT", "BEST_FIT", "WORST_FIT"]:
+            results[s] = allocate(partitions, blks, s)
+        # pick best = lowest fragmentation among allocated
+        best = min(results.values(), key=lambda r: r["total_fragmentation_kb"])
+        return {"algorithm": "ALL", "results": results, "best": best["algorithm"], "partitions": partitions}
+    else:
+        return allocate(partitions, blks, algorithm)
+
+@app.post("/api/simulation/memory/allocate")
+def simulate_memory_allocation(req: MemoryAllocRequest):
+    return _run_memory_allocation(req.total_memory, req.blocks, req.algorithm.upper())
+
+@app.get("/api/simulation/memory/presets")
+def get_memory_presets():
+    return {
+        "small": {"label": "Small Workload", "total_memory": 512,  "blocks": [{"id":1,"size":100},{"id":2,"size":50},{"id":3,"size":200},{"id":4,"size":75},{"id":5,"size":30}]},
+        "medium":{"label": "Medium Workload","total_memory": 1024, "blocks": [{"id":1,"size":150},{"id":2,"size":80},{"id":3,"size":300},{"id":4,"size":60},{"id":5,"size":200},{"id":6,"size":40}]},
+        "heavy": {"label": "Heavy Workload", "total_memory": 2048, "blocks": [{"id":1,"size":400},{"id":2,"size":100},{"id":3,"size":512},{"id":4,"size":200},{"id":5,"size":80},{"id":6,"size":300},{"id":7,"size":150}]},
+    }
+
+# ----------------- Page Replacement Algorithms -----------------
+
+class PageReplaceRequest(BaseModel):
+    frames: int = Field(3, ge=1, le=8)
+    reference_string: List[int] = Field(..., min_length=3, max_length=50)
+    algorithm: str = Field("ALL", description="FIFO, LRU, OPTIMAL, ALL")
+
+def _run_page_replacement(frames: int, ref_string: list, algorithm: str):
+
+    def fifo(frames, refs):
+        memory, queue, faults, steps = [], [], 0, []
+        for page in refs:
+            hit = page in memory
+            evicted = None
+            if not hit:
+                faults += 1
+                if len(memory) >= frames:
+                    evicted = queue.pop(0)
+                    memory.remove(evicted)
+                memory.append(page)
+                queue.append(page)
+            steps.append({"page": page, "frames": list(memory), "fault": not hit, "evicted": evicted})
+        return {"algorithm": "FIFO", "faults": faults, "hits": len(refs) - faults,
+                "fault_rate": round(faults / len(refs) * 100, 1), "steps": steps}
+
+    def lru(frames, refs):
+        memory, faults, steps = [], 0, []
+        for i, page in enumerate(refs):
+            hit = page in memory
+            evicted = None
+            if not hit:
+                faults += 1
+                if len(memory) >= frames:
+                    # find least recently used
+                    lru_page = min(memory, key=lambda p: max((j for j in range(i) if refs[j] == p), default=-1))
+                    evicted = lru_page
+                    memory.remove(lru_page)
+                memory.append(page)
+            else:
+                memory.remove(page)
+                memory.append(page)
+            steps.append({"page": page, "frames": list(memory), "fault": not hit, "evicted": evicted})
+        return {"algorithm": "LRU", "faults": faults, "hits": len(refs) - faults,
+                "fault_rate": round(faults / len(refs) * 100, 1), "steps": steps}
+
+    def optimal(frames, refs):
+        memory, faults, steps = [], 0, []
+        for i, page in enumerate(refs):
+            hit = page in memory
+            evicted = None
+            if not hit:
+                faults += 1
+                if len(memory) >= frames:
+                    # find page used farthest in future
+                    future = refs[i+1:]
+                    def next_use(p):
+                        for j, fp in enumerate(future):
+                            if fp == p: return j
+                        return float('inf')
+                    evicted = max(memory, key=next_use)
+                    memory.remove(evicted)
+                memory.append(page)
+            steps.append({"page": page, "frames": list(memory), "fault": not hit, "evicted": evicted})
+        return {"algorithm": "OPTIMAL", "faults": faults, "hits": len(refs) - faults,
+                "fault_rate": round(faults / len(refs) * 100, 1), "steps": steps}
+
+    if algorithm == "ALL":
+        f = fifo(frames, ref_string)
+        l = lru(frames, ref_string)
+        o = optimal(frames, ref_string)
+        best = min([f, l, o], key=lambda r: r["faults"])
+        return {"algorithm": "ALL", "frames": frames, "reference_string": ref_string,
+                "results": {"FIFO": f, "LRU": l, "OPTIMAL": o}, "best": best["algorithm"]}
+    elif algorithm == "FIFO":
+        return fifo(frames, ref_string)
+    elif algorithm == "LRU":
+        return lru(frames, ref_string)
+    elif algorithm == "OPTIMAL":
+        return optimal(frames, ref_string)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown algorithm: {algorithm}")
+
+@app.post("/api/simulation/page-replacement")
+def simulate_page_replacement(req: PageReplaceRequest):
+    return _run_page_replacement(req.frames, req.reference_string, req.algorithm.upper())
+
+@app.get("/api/simulation/page-replacement/presets")
+def get_page_replacement_presets():
+    return {
+        "classic":   {"label": "Classic Textbook",  "frames": 3, "reference_string": [7,0,1,2,0,3,0,4,2,3,0,3,2]},
+        "belady":    {"label": "Belady's Anomaly",   "frames": 3, "reference_string": [1,2,3,4,1,2,5,1,2,3,4,5]},
+        "heavy":     {"label": "Heavy Reference Set","frames": 4, "reference_string": [1,2,3,4,5,1,2,3,4,5,6,1,2,3,4,5,6]},
+        "locality":  {"label": "Locality of Reference","frames":3,"reference_string": [1,2,1,2,1,2,3,4,3,4,3,4,1,2,1]},
+    }
+
+# ----------------- Process Burst History (for predictor) -----------------
+
+@app.get("/api/processes/burst-history")
+def get_process_burst_history():
+    """Returns recent CPU usage snapshots to simulate burst history for prediction."""
+    from app.telemetry import get_process_list
+    procs = get_process_list(limit=20, sort_by="cpu_percent", order="desc")
+    history = []
+    for p in procs[:10]:
+        # Simulate burst history from cpu_percent (in a real OS this would be tracked over time)
+        import random
+        random.seed(p["pid"])
+        base = max(1, p["cpu_percent"])
+        bursts = [round(base * (0.7 + random.random() * 0.6), 1) for _ in range(5)]
+        history.append({
+            "pid": p["pid"],
+            "name": p["name"],
+            "cpu_percent": p["cpu_percent"],
+            "burst_history": bursts,
+            "predicted_next": round(sum(bursts[-3:]) / 3, 1),  # Simple SMA-3
+            "avg_burst": round(sum(bursts) / len(bursts), 1)
+        })
+    return {"processes": history}
+
 # ----------------- ML Advisor Endpoints -----------------
 
 @app.get("/api/advisor/live")

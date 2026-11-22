@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local SQLite database
+backend/data/kairos.db
