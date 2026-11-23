@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # KAIROS: Kernel-Aware Intelligent Resource Orchestration System
 
 ## 1. System Overview
